@@ -14,8 +14,14 @@ export default function App() {
     })
     const prompt =
       "Suggest me some gift ideas for my wife who loves gardening"
-    
-      console.log("Prompt:", prompt);
+    const prompt2 =`  
+      Suggest some gifts for someone who loves hiphop music. 
+      Make these suggestions thoughtful and practical. 
+      Your response must be under 100 words. 
+      Skip intros and conclusions. 
+      Only output gift suggestions.
+    `
+      console.log("Prompt:", prompt2);
     console.log("Making AI request...");
     
     try {
@@ -24,7 +30,7 @@ export default function App() {
         messages: [
           {
             role: "user",
-            content: prompt,
+            content: prompt2,
           },
         ],
       })
