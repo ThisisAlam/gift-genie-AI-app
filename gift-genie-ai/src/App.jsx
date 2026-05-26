@@ -11,8 +11,10 @@ import { checkEnvironment } from "../utils"
 
 export default function App() {
   // Defining State
-  const [input, setInput] = React.useState()
+  const [inputPrompt, setInputPrompt] = React.useState()
+  const [output, setOutput] = React.useState()
   const [loadingState, setLoadingState] = React.useState(false)
+  const [messageArray, setMessageArray] = React.useState([])
   // SetUp OpenAI Client
   const openai = new OpenAI ({
     apiKey : import.meta.env.VITE_AI_KEY,
@@ -31,18 +33,20 @@ export default function App() {
         messages: prompt
       })
       const responseOutput = response.choices[0].message.content
-      setInput(responseOutput)
+      setInputPrompt(responseOutput)
+
     } catch(error){
       if(error.status === 401 || error.status === 403){
-        setInput("Authentication error: Check your AI-KEY and make sure it's Valid");
+        setInputPrompt("Authentication error: Check your AI-KEY and make sure it's Valid");
       } else if(error.status >= 500){
-        setInput("AI provider error: Something went wrong on the provider side. Try again shortly.");
+        setInputPrompt("AI provider error: Something went wrong on the provider side. Try again shortly.");
       } else {
-        setInput("Unexpected error:" `${error.message || error}`);
+        setInputPrompt("Unexpected error:" `${error.message || error}`);
       }
 
     } finally {
       setLoadingState(false)
+
     }
   }
 
@@ -64,13 +68,30 @@ export default function App() {
       <p>Click to call AI and ask for suggestion</p>
       <p style={{fontWeight:"bold",
         fontStyle: "italic"
-      }}>Prompt: {prompt[0].content}</p>
-      <button onClick={setResponseState}>
+      }}>System Prompt: {prompt[0].content}</p>
+      <p style={{fontWeight:"bold",
+        fontStyle: "italic"
+      }}>Prompt: {prompt[1].content}</p>
+      <p style={{fontWeight:"bold",
+        fontStyle: "italic"
+      }}>Input Prompt: {input}</p>
+      <textarea
+        style={{
+          width:"100%",
+          height:"70px",
+          resize:"none"
+        }}
+        onChange={(e)=>setInput(e.target.value)}  
+        placeholder="Write your prompt here!"></textarea>
+      <br />
+      <button 
+        style={{width:"100%"}}
+        onClick={setResponseState}>
         <img src={lampImg} alt="lamp button image" style={{width: "3rem"}}/>
-        <p>Call AI</p></button>
+        <p>Call AI</p>
+      </button>
       <div>
         {loadingState && "Making AI Request..."} 
-        <p>{input}</p>
       </div>
     </>
    )

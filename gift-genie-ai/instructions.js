@@ -5,11 +5,11 @@ export const instructions = [
             Make the suggestions thougthful and practical.
             Your response must be under 100 words. 
             Skip intro and conclusions.
-            Only Output gidt suggestions
+            Only Output gidt suggestions.
             `
     },
     {
         role: "user",
-        content: "suggest me some gift ideas for someone who loves flowers"
+        content: "Suggest me some gift ideas for someone who loves flowers."
     }
 ]
