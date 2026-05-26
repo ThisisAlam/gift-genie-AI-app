@@ -93,72 +93,67 @@ export default function App() {
   }
 
    return(
-    <>
-      <div>
-        <img
-          src={titleImg}
-          alt="title-logo"
-          style={{
-            width: "3rem",
-            backgroundColor:"black",
-            margin: "0 auto"
-          }}
-        />
-        <span style={{fontSize:"2rem"}}>This is genie App</span>
+    <div className="app-container">
+      <div className="app-header">
+         <img src={titleImg} alt="logo" />
+        <h1 className="app-title">Gift Genie</h1>
       </div>
-      <p>Click to call AI and ask for suggestion</p>
-      <p style={{fontWeight:"bold",
-        fontStyle: "italic"
-      }}>Example Prompt: Suggest me some gift ideas for someone who loves flowers.</p>
-      <p style={{fontWeight:"bold",
-        fontStyle: "italic"
-      }}>Input Prompt: {inputPrompt}</p>
+      <p className="subtitle">
+        AI-powered personalized gift recommendations
+      </p>
       <textarea
-        style={{
-          width:"100%",
-          height:"70px",
-          resize:"none"
-        }}
+        className="prompt-box"
         disabled={loadingState}
         value={inputPrompt}
         onChange={(e)=>setInputPrompt(e.target.value)}  
         placeholder="Write your prompt here!"></textarea>
       <br />
       <button
+          className="submit-btn"
           disabled={loadingState || !inputPrompt.trim()}
-          style={{
-            width:"100%",
-            opacity: loadingState ? 0.5 : 1,
-            cursor: loadingState ? "not-allowed" : "pointer"
-          }}
           onClick={setResponseState}>
         <img src={lampImg} alt="lamp button image" style={{width: "3rem"}}/>
         <p>{loadingState? "Your call is connected, please wait for response" : "Call AI"}</p>
       </button>
       <div>
         {loadingState && <p>🤖 Thinking...</p>}
-        {chatHistory.map((msg, index) => (
-          <div key={index}>
-            <strong>{msg.role}:</strong>
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeSanitize]}>
-              {DOMPurify.sanitize(msg.content)}
-            </ReactMarkdown>
+        <div className="chat-container">
+          {chatHistory.map((msg, index) => (
+            <div 
+              key={index}
+              className={
+                msg.role === "user"
+                  ? "message user-message"
+                  : "message assistant-message"}
+              >
+              <div className="role-label">
+                {msg.role}
+              </div>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeSanitize]}
+              >
+                {DOMPurify.sanitize(msg.content)}
+              </ReactMarkdown>
+            </div>
+            ))}
           </div>
-        ))}
-        {loadingState && responseOutput && (
-          <div>
-            <strong>assistant:</strong>
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeSanitize]}>
-              {DOMPurify.sanitize(responseOutput)}
-            </ReactMarkdown>
-          </div>
-        )}
-        {loadingState && <span className="cursor">▋</span>}
+          {loadingState && responseOutput && (
+            <div className="message assistant-message">
+              <div className="role-label">
+                assistant
+              </div>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeSanitize]}
+              >
+                {DOMPurify.sanitize(responseOutput)}
+              </ReactMarkdown>
+              <span className="cursor">▋</span>
+            </div>
+          )}
+          {loadingState && <span className="cursor">▋</span>}
       </div>
-    </>
+    </div>
    )
 }

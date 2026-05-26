@@ -70,9 +70,9 @@ export const instructions = [
         Realistic estimated price range if appropriate.
 
         - **How to Get It:**
-        - Step 1
-        - Step 2
-        - Step 3
+        - Step 1: description of the step
+        - Step 2: description of the step
+        - Step 3: description of the step
 
         - **Availability Tip:**  
         Mention realistic buying options, delivery advice, local availability, or web-based purchasing suggestions when relevant.
