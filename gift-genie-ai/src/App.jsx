@@ -12,6 +12,7 @@ import OpenAI from "openai"
 // Importing JS Programs
 import { instructions as systemPrompt } from "../instructions.js"
 import { checkEnvironment } from "../utils"
+import { giftSchemaResponses } from "../schema-responses.js"
 // SetUp OpenAI Client
 const openai = new OpenAI ({
   apiKey : import.meta.env.VITE_AI_KEY,
@@ -25,36 +26,56 @@ export default function App() {
   const [inputPrompt, setInputPrompt] = React.useState("")
   const [responseOutput, setResponseOutput] = React.useState("")
   const [messages, setMessages] = React.useState(systemPrompt)
+  const [chatHistory, setChatHistory] = React.useState([])
+  
   // Checking Environment
   checkEnvironment()
+
   // CALLING ASYNC AWAIT FUNCTION
   async function setResponseState(e){
     e.preventDefault();
-    
+    const userMessage = {
+      role: "user",
+      content: inputPrompt
+    }
     try{
       setLoadingState(true)
       const updatedMessages = [
         ...messages,
-        { role: "user", content: inputPrompt }
+        userMessage
       ]
       setMessages(updatedMessages)
-      const stream = await openai.chat.completions.create({
+      setChatHistory(prev => [
+        ...prev,
+        userMessage
+      ])
+      const stream = await openai.responses.create({
         model: import.meta.env.VITE_AI_MODEL,
-        messages: updatedMessages,
+        input: updatedMessages,
+        tools: [{ type: "web_search_preview" }],
         stream: true
       })
       let fullResponse = ""
       setResponseOutput("")
       for await (const chunk of stream) {
-        console.log(chunk.choices[0].delta.content)
-        const content =
-          chunk.choices[0]?.delta?.content || ""
-        fullResponse += content
-        setResponseOutput(fullResponse)
+        if (chunk.type === "response.output_text.delta") {
+          fullResponse += chunk.delta
+          setResponseOutput(fullResponse)
+        }
       }
-      setMessages([...updatedMessages,
-        {role: "assistant", content: fullResponse}
+      const assistantMessage = {
+        role: "assistant",
+        content: fullResponse
+      }
+      setMessages([
+        ...updatedMessages,
+        assistantMessage
       ])
+      setChatHistory(prev => [
+        ...prev,
+        assistantMessage
+      ])
+      setResponseOutput("")
 
     } catch(error){
       if(error.status === 401 || error.status === 403){
@@ -116,21 +137,26 @@ export default function App() {
       </button>
       <div>
         {loadingState && <p>🤖 Thinking...</p>}
-        {messages
-        .filter(msg => msg.role !== "system")
-        .map((msg, index) => (
+        {chatHistory.map((msg, index) => (
           <div key={index}>
-
             <strong>{msg.role}:</strong>
-
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeSanitize]}
-            >
+              rehypePlugins={[rehypeSanitize]}>
               {DOMPurify.sanitize(msg.content)}
             </ReactMarkdown>
           </div>
         ))}
+        {loadingState && responseOutput && (
+          <div>
+            <strong>assistant:</strong>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeSanitize]}>
+              {DOMPurify.sanitize(responseOutput)}
+            </ReactMarkdown>
+          </div>
+        )}
         {loadingState && <span className="cursor">▋</span>}
       </div>
     </>
