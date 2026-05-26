@@ -8,8 +8,4 @@ export const instructions = [
             Only Output gidt suggestions.
             `
     },
-    {
-        role: "user",
-        content: "Suggest me some gift ideas for someone who loves flowers."
-    }
 ]

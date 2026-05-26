@@ -3,50 +3,71 @@ import titleImg from "./assets/genie.svg"
 import lampImg from "./assets/lamp.svg"
 // Importing React
 import React from 'react'
+import ReactMarkdown from "react-markdown"
+import rehypeSanitize from "rehype-sanitize"
+import DOMPurify from "dompurify"
+import remarkGfm from "remark-gfm"
 // Importing OpenAI
 import OpenAI from "openai"
 // Importing JS Programs
-import { instructions as prompt } from "../instructions.js"
+import { instructions as systemPrompt } from "../instructions.js"
 import { checkEnvironment } from "../utils"
+// SetUp OpenAI Client
+const openai = new OpenAI ({
+  apiKey : import.meta.env.VITE_AI_KEY,
+  baseURL : import.meta.env.VITE_AI_URL,
+  dangerouslyAllowBrowser : true
+})
 
 export default function App() {
   // Defining State
-  const [inputPrompt, setInputPrompt] = React.useState()
-  const [output, setOutput] = React.useState()
   const [loadingState, setLoadingState] = React.useState(false)
-  const [messageArray, setMessageArray] = React.useState([])
-  // SetUp OpenAI Client
-  const openai = new OpenAI ({
-    apiKey : import.meta.env.VITE_AI_KEY,
-    baseURL : import.meta.env.VITE_AI_URL,
-    dangerouslyAllowBrowser : true
-  })
+  const [inputPrompt, setInputPrompt] = React.useState("")
+  const [responseOutput, setResponseOutput] = React.useState("")
+  const [messages, setMessages] = React.useState(systemPrompt)
   // Checking Environment
   checkEnvironment()
-
   // CALLING ASYNC AWAIT FUNCTION
-  async function setResponseState(){
+  async function setResponseState(e){
+    e.preventDefault();
+    
     try{
       setLoadingState(true)
-      const response = await openai.chat.completions.create({
+      const updatedMessages = [
+        ...messages,
+        { role: "user", content: inputPrompt }
+      ]
+      setMessages(updatedMessages)
+      const stream = await openai.chat.completions.create({
         model: import.meta.env.VITE_AI_MODEL,
-        messages: prompt
+        messages: updatedMessages,
+        stream: true
       })
-      const responseOutput = response.choices[0].message.content
-      setInputPrompt(responseOutput)
+      let fullResponse = ""
+      setResponseOutput("")
+      for await (const chunk of stream) {
+        console.log(chunk.choices[0].delta.content)
+        const content =
+          chunk.choices[0]?.delta?.content || ""
+        fullResponse += content
+        setResponseOutput(fullResponse)
+      }
+      setMessages([...updatedMessages,
+        {role: "assistant", content: fullResponse}
+      ])
 
     } catch(error){
       if(error.status === 401 || error.status === 403){
-        setInputPrompt("Authentication error: Check your AI-KEY and make sure it's Valid");
+        setResponseOutput("Authentication error: Check your AI-KEY and make sure it's Valid");
       } else if(error.status >= 500){
-        setInputPrompt("AI provider error: Something went wrong on the provider side. Try again shortly.");
+        setResponseOutput("AI provider error: Something went wrong on the provider side. Try again shortly.");
       } else {
-        setInputPrompt("Unexpected error:" `${error.message || error}`);
+        setResponseOutput(`Unexpected error: ${error.message || error}`);
       }
 
     } finally {
       setLoadingState(false)
-
+      setInputPrompt("")
     }
   }
 
@@ -58,40 +79,59 @@ export default function App() {
           alt="title-logo"
           style={{
             width: "3rem",
-            display: "block",
             backgroundColor:"black",
             margin: "0 auto"
           }}
         />
-        <h1>This is genie App</h1>
+        <span style={{fontSize:"2rem"}}>This is genie App</span>
       </div>
       <p>Click to call AI and ask for suggestion</p>
       <p style={{fontWeight:"bold",
         fontStyle: "italic"
-      }}>System Prompt: {prompt[0].content}</p>
+      }}>Example Prompt: Suggest me some gift ideas for someone who loves flowers.</p>
       <p style={{fontWeight:"bold",
         fontStyle: "italic"
-      }}>Prompt: {prompt[1].content}</p>
-      <p style={{fontWeight:"bold",
-        fontStyle: "italic"
-      }}>Input Prompt: {input}</p>
+      }}>Input Prompt: {inputPrompt}</p>
       <textarea
         style={{
           width:"100%",
           height:"70px",
           resize:"none"
         }}
-        onChange={(e)=>setInput(e.target.value)}  
+        disabled={loadingState}
+        value={inputPrompt}
+        onChange={(e)=>setInputPrompt(e.target.value)}  
         placeholder="Write your prompt here!"></textarea>
       <br />
-      <button 
-        style={{width:"100%"}}
-        onClick={setResponseState}>
+      <button
+          disabled={loadingState || !inputPrompt.trim()}
+          style={{
+            width:"100%",
+            opacity: loadingState ? 0.5 : 1,
+            cursor: loadingState ? "not-allowed" : "pointer"
+          }}
+          onClick={setResponseState}>
         <img src={lampImg} alt="lamp button image" style={{width: "3rem"}}/>
-        <p>Call AI</p>
+        <p>{loadingState? "Your call is connected, please wait for response" : "Call AI"}</p>
       </button>
       <div>
-        {loadingState && "Making AI Request..."} 
+        {loadingState && <p>🤖 Thinking...</p>}
+        {messages
+        .filter(msg => msg.role !== "system")
+        .map((msg, index) => (
+          <div key={index}>
+
+            <strong>{msg.role}:</strong>
+
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeSanitize]}
+            >
+              {DOMPurify.sanitize(msg.content)}
+            </ReactMarkdown>
+          </div>
+        ))}
+        {loadingState && <span className="cursor">▋</span>}
       </div>
     </>
    )
