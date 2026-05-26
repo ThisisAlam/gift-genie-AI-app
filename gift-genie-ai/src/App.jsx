@@ -25,13 +25,13 @@ export default function App() {
   // CALLING ASYNC AWAIT FUNCTION
   async function setResponseState(){
     try{
+      setLoadingState(true)
       const response = await openai.chat.completions.create({
         model: import.meta.env.VITE_AI_MODEL,
         messages: prompt
       })
       const responseOutput = response.choices[0].message.content
       setInput(responseOutput)
-
     } catch(error){
       if(error.status === 401 || error.status === 403){
         setInput("Authentication error: Check your AI-KEY and make sure it's Valid");
@@ -48,12 +48,29 @@ export default function App() {
 
    return(
     <>
-      <h1>This is genie App</h1>
-      <p>Click to call AI and ask for suggestion</p>
-      <button onClick={setResponseState}>Call AI</button>
       <div>
-        <p>Prompt: {prompt[0].content}</p>
-        <p>{"Making AI Request..." +<br/>+ input}</p>
+        <img
+          src={titleImg}
+          alt="title-logo"
+          style={{
+            width: "3rem",
+            display: "block",
+            backgroundColor:"black",
+            margin: "0 auto"
+          }}
+        />
+        <h1>This is genie App</h1>
+      </div>
+      <p>Click to call AI and ask for suggestion</p>
+      <p style={{fontWeight:"bold",
+        fontStyle: "italic"
+      }}>Prompt: {prompt[0].content}</p>
+      <button onClick={setResponseState}>
+        <img src={lampImg} alt="lamp button image" style={{width: "3rem"}}/>
+        <p>Call AI</p></button>
+      <div>
+        {loadingState && "Making AI Request..."} 
+        <p>{input}</p>
       </div>
     </>
    )
