@@ -26,29 +26,31 @@ export default function App() {
   const [inputPrompt, setInputPrompt] = React.useState("")
   const [responseOutput, setResponseOutput] = React.useState("")
   const [messages, setMessages] = React.useState(systemPrompt)
-  const [chatHistory, setChatHistory] = React.useState([])
   
   // Checking Environment
-  checkEnvironment()
-
+  React.useEffect(() => {
+    checkEnvironment()
+  }, [])
+  
   // CALLING ASYNC AWAIT FUNCTION
   async function setResponseState(e){
     e.preventDefault();
-    const userMessage = {
-      role: "user",
-      content: inputPrompt
-    }
     try{
+      const userMessage = {
+        role: "user",
+        content: inputPrompt
+      }
       setLoadingState(true)
-      const updatedMessages = [
-        ...messages,
-        userMessage
-      ]
-      setMessages(updatedMessages)
-      setChatHistory(prev => [
+       const updatedMessages = [
+          ...messages,
+          userMessage
+        ]
+
+      setMessages(prev => [
         ...prev,
         userMessage
       ])
+      setMessages(updatedMessages)
       const stream = await openai.responses.create({
         model: import.meta.env.VITE_AI_MODEL,
         input: updatedMessages,
@@ -67,16 +69,11 @@ export default function App() {
         role: "assistant",
         content: fullResponse
       }
-      setMessages([
-        ...updatedMessages,
-        assistantMessage
-      ])
-      setChatHistory(prev => [
+      setMessages(prev => [
         ...prev,
         assistantMessage
       ])
       setResponseOutput("")
-
     } catch(error){
       if(error.status === 401 || error.status === 403){
         setResponseOutput("Authentication error: Check your AI-KEY and make sure it's Valid");
@@ -85,17 +82,23 @@ export default function App() {
       } else {
         setResponseOutput(`Unexpected error: ${error.message || error}`);
       }
-
+      
     } finally {
       setLoadingState(false)
       setInputPrompt("")
     }
   }
-
-   return(
+  const bottomRef = React.useRef(null)
+  React.useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth"
+    })
+  }, [messages, responseOutput])
+  
+  return(
     <div className="app-container">
       <div className="app-header">
-         <img src={titleImg} alt="logo" />
+        <img src={titleImg} alt="logo" />
         <h1 className="app-title">Gift Genie</h1>
       </div>
       <p className="subtitle">
@@ -112,13 +115,14 @@ export default function App() {
           className="submit-btn"
           disabled={loadingState || !inputPrompt.trim()}
           onClick={setResponseState}>
-        <img src={lampImg} alt="lamp button image" style={{width: "3rem"}}/>
         <p>{loadingState? "Your call is connected, please wait for response" : "Call AI"}</p>
       </button>
-      <div>
-        {loadingState && <p>🤖 Thinking...</p>}
+      <div className="ai-response-section">
+        <hr />
         <div className="chat-container">
-          {chatHistory.map((msg, index) => (
+          {messages
+            .filter(msg=>msg.role !== "system")
+            .map((msg, index) => (
             <div 
               key={index}
               className={
@@ -132,12 +136,11 @@ export default function App() {
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeSanitize]}
-              >
+                >
                 {DOMPurify.sanitize(msg.content)}
               </ReactMarkdown>
             </div>
-            ))}
-          </div>
+          ))}
           {loadingState && responseOutput && (
             <div className="message assistant-message">
               <div className="role-label">
@@ -146,13 +149,16 @@ export default function App() {
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeSanitize]}
-              >
+                >
                 {DOMPurify.sanitize(responseOutput)}
               </ReactMarkdown>
               <span className="cursor">▋</span>
             </div>
           )}
-          {loadingState && <span className="cursor">▋</span>}
+          <div ref={bottomRef}></div>
+        </div>
+        {loadingState && <span className="cursor">▋</span>}
+        <br />
       </div>
     </div>
    )
