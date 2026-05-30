@@ -1,18 +1,17 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-export function checkEnvironment() {
-    if (!import.meta.env.VITE_AI_URL) {
-      throw new Error("Missing AI_URL. This tells us which AI provider you're using.");
-    }
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyD_LYt8ftpS-B_BxOytNK0EQgItN_8T0j8",
+  authDomain: "vanlife-alam.firebaseapp.com",
+  projectId: "vanlife-alam",
+  storageBucket: "vanlife-alam.firebasestorage.app",
+  messagingSenderId: "225048520324",
+  appId: "1:225048520324:web:82fdbe14c9785a6740c4d1"
+};
 
-    if (!import.meta.env.VITE_AI_MODEL) {
-      throw new Error("Missing AI_MODEL. The AI request needs a model name.");
-    }
-
-    if (!import.meta.env.VITE_AI_KEY) {
-      throw new Error("Missing AI_KEY. Your API key is not being picked up.");
-    }
-
-    console.log("AI provider URL:", import.meta.env.VITE_AI_URL);
-    console.log("AI model:", import.meta.env.VITE_AI_MODEL);
-    console.log("Environment variables loaded successfully")
-  }
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
